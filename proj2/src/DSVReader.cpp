@@ -1,24 +1,25 @@
 #include "DSVReader.h"
+#include <vector>
+#include <string>  
 
 struct CDSVReader::SImplementation {
     char delimiter;
     std::shared_ptr<CDataSource> dc;
-
-    SImplementation(std::shared_ptr<CDataSource> dc, char delimiter) 
+    
+    SImplementation(std::shared_ptr<CDataSource> dc, char delimiter)
         : delimiter(delimiter == '"' ? ',' : delimiter), dc(dc) {}
-
-    // Checks if reached end
+    
     bool End() const {
         char a;
         return !dc->Peek(a);
     }
-
+    
     bool ReadRow(std::vector<std::string>& row) {
         row.clear();
         std::string val;
         char a;
         bool inQuotes = false;
-
+        
         while (dc->Get(a)) {
             if (a == '"') {
                 // Handle quotes
@@ -51,16 +52,15 @@ struct CDSVReader::SImplementation {
                 break;
             }
             else {
-                // Reg char added to field
+                // Regular char added to field
                 val += a;
             }
         }
-
-        // Push last value if not empty
+        
+        // Push last value if not empty or if row has other values
         if (!val.empty() || !row.empty()) {
             row.push_back(val);
         }
-
         return !row.empty();
     }
 };
@@ -70,12 +70,10 @@ CDSVReader::CDSVReader(std::shared_ptr<CDataSource> dc, char delimiter)
 
 CDSVReader::~CDSVReader() = default;
 
-// Checks if end of file has been reached
 bool CDSVReader::End() const {
     return DImplementation->End();
 }
 
-// Reads row from the CSV and stores it in vector
 bool CDSVReader::ReadRow(std::vector<std::string>& row) {
     return DImplementation->ReadRow(row);
 }
