@@ -1,6 +1,10 @@
 #include "DSVReader.h"
+#include "DataSource.h"
+#include "StringDataSource.h"
 #include <vector>
-#include <string>  
+#include <string>
+#include <sstream> 
+#include <memory>
 
 struct CDSVReader::SImplementation {
     char delimiter;
