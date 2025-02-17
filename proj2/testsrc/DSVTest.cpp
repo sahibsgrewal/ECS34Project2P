@@ -65,3 +65,46 @@ TEST(DSVReader, ReadEmptyFieldsTest) {
     EXPECT_EQ(row2[1], "Grewal");
     EXPECT_EQ(row2[2], "");
 }
+// Test reading and writing with no quotes
+TEST(DSVWriter, WriteWithoutQuotesTest) {
+    // Create a DSVWriter with StringDataSink and no quotes
+    CStringDataSink sink;
+
+    CDSVWriter writer(std::make_shared<CStringDataSink>(sink), ',', false);
+
+    // Write rows without quotes
+    writer.WriteRow({"Sahib", "Grewal", "34"});
+    writer.WriteRow({"Omar", "Taha", "43"});
+
+    // Check the content of the StringDataSink
+    EXPECT_EQ(sink.String(), "Sahib,Grewal,34\nOmar,Taha,43");
+}
+
+// Test reading and writing with different line endings
+TEST(DSVWriter, WriteWithDifferentLineEndingsTest) {
+    // Create a DSVWriter with a StringDataSink and different line endings
+    CStringDataSink sink;
+
+    CDSVWriter writer(std::make_shared<CStringDataSink>(sink), ',', true);
+
+    // Write rows with different line endings
+    writer.WriteRow({"Sahib", "Grewal", "34"});
+    writer.WriteRow({"Omar", "Taha", "43"});
+
+    // Check the content of the StringDataSink
+    EXPECT_EQ(sink.String(), "\"Sahib\",\"Grewal\",\"34\"\r\n\"Omar\",\"Taha\",\"43\"\n");
+}
+// Test reading and writing with escaped characters
+TEST(DSVWriter, WriteWithEscapedCharactersTest) {
+    // Create a DSVWriter with a StringDataSink and escape characters
+    CStringDataSink sink;
+
+    CDSVWriter writer(std::make_shared<CStringDataSink>(sink), ',', true);
+
+    // Write rows with escaped characters
+    writer.WriteRow({"Sahib", "Grewal, Student", "34"});
+    writer.WriteRow({"Omar", "Taha \"TA\"", "43"});
+
+    // Check the content of the StringDataSink
+    EXPECT_EQ(sink.String(), "\"Sahib\",\"Grewal, Student\",\"34\"\n\"Omar\",\"Taha \"\"TA\"\"\",\"43\"");
+}
