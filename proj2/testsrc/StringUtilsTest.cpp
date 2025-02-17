@@ -2,7 +2,6 @@
 #include "StringUtils.h"
 
 TEST(StringUtilsTest, SliceTest){
-    
     EXPECT_EQ(StringUtils::Slice("",1,2), "");
     EXPECT_EQ(StringUtils::Slice("hello", 1, 4), "ell");
     EXPECT_EQ(StringUtils::Slice("hello", -4, -1), "ell");
