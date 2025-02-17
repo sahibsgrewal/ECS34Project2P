@@ -5,9 +5,9 @@ struct CDSVReader::SImplementation {
     std::shared_ptr<CDataSource> dc;
 
     SImplementation(std::shared_ptr<CDataSource> dc, char delimiter) 
-        : dc(dc), delimiter(delimiter == '"' ? ',' : delimiter) {}
+        : delimiter(delimiter == '"' ? ',' : delimiter), dc(dc) {}
 
-// Checks if end is reached
+    // Checks if reached end
     bool End() const {
         char a;
         return !dc->Peek(a);
@@ -21,7 +21,7 @@ struct CDSVReader::SImplementation {
 
         while (dc->Get(a)) {
             if (a == '"') {
-                // Handles quotes
+                // Handle quotes
                 if (val.empty()) {
                     inQuotes = true;
                     continue;
@@ -37,18 +37,17 @@ struct CDSVReader::SImplementation {
                     continue;
                 }
                 if (nextChar == '"') {
-                    // Escaped quote
-                    val += a;
+                    val += a; // Escaped quote
                     continue;
                 }
             }
             else if (a == delimiter && !inQuotes) {
-                // Delimeter found outside the quotes, end field
+                // Delimiter found outside quote, end field
                 row.push_back(val);
                 val.clear();
             }
             else if (a == '\n') {
-                // Its end of row
+                // End of row
                 break;
             }
             else {
@@ -56,7 +55,8 @@ struct CDSVReader::SImplementation {
                 val += a;
             }
         }
-// Push last val if not empty
+
+        // Push last value if not empty
         if (!val.empty() || !row.empty()) {
             row.push_back(val);
         }
@@ -64,18 +64,18 @@ struct CDSVReader::SImplementation {
         return !row.empty();
     }
 };
-// Initialize implementation
+
 CDSVReader::CDSVReader(std::shared_ptr<CDataSource> dc, char delimiter)
     : DImplementation(std::make_unique<SImplementation>(dc, delimiter)) {}
 
 CDSVReader::~CDSVReader() = default;
 
-// Check if reader reached end of file
+// Checks if end of file has been reached
 bool CDSVReader::End() const {
     return DImplementation->End();
 }
 
-// Reads row from CSV and stores in vector
+// Reads row from the CSV and stores it in vector
 bool CDSVReader::ReadRow(std::vector<std::string>& row) {
     return DImplementation->ReadRow(row);
 }
