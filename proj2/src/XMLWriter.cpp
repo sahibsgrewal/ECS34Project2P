@@ -1,80 +1,107 @@
 #include "XMLWriter.h"
+#include "StringDataSink.h"
+#include <memory>
+#include <vector>
+#include <string>
 #include <sstream>
+#include "StringUtils.h"
 
 struct CXMLWriter::SImplementation {
     std::shared_ptr<CDataSink> Sink;
+    SImplementation(std::shared_ptr<CDataSink> sink) : Sink(sink) {
 
-    SImplementation(std::shared_ptr<CDataSink> sink) : Sink(sink) {}
-
-    // Converts special XML characters into escaped equivalents
-    std::string EscapeString(const std::string& input) {
-        std::ostringstream result;
-        for (char c : input) {
-            switch (c) {
-                case '&': result << "&amp;"; break;
-                case '<': result << "&lt;"; break;
-                case '>': result << "&gt;"; break;
-                case '"': result << "&quot;"; break;
-                case '\'': result << "&apos;"; break;
-                default: result << c;
+    }
+    void HandleSpecial(std::ostream& os, const std::string& value) { 
+        for (char ch : value) {
+            switch (ch) {
+                case '&':  os << "&amp;"; break;
+                case '<':  os << "&lt;"; break;
+                case '>':  os << "&gt;"; break;
+                case '\"': os << "&quot;"; break;
+                case '\'': os << "&apos;"; break;
+                default:   os << ch; break;
             }
         }
-        return result.str();
     }
 
-    // Writes a string to data sink
-    void WriteToDisk(const std::string& str) {
-        Sink->Write(std::vector<char>(str.begin(), str.end()));
-    }
-
-    // Formats attributes into format
-    std::string FormatAttributes(const std::vector<SXMLEntity::TAttribute>& attrs) {
-        std::ostringstream result;
-        for (const auto& attr : attrs) {
-            result << " " << EscapeString(attr.first) << "=\"" << EscapeString(attr.second) << "\"";
+    void StartElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
+        std::stringstream ss;
+        ss << "<";
+        HandleSpecial(ss, name);
+        for (const auto& attr : attributes) {
+            ss << " ";
+            HandleSpecial(ss, attr.first);
+            ss << "=\"";
+            HandleSpecial(ss, attr.second);
+            ss << "\"";
         }
-        return result.str();
+        ss << ">";
+        std::string temp = ss.str();
+        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
     }
 
-    // Handles writing XML entities
-    void HandleEntity(const SXMLEntity& entity) {
-        std::ostringstream output;
+    void EndElement(const std::string& name) {
+        std::stringstream ss;
+        ss << "</";
+        HandleSpecial(ss, name);
+        ss << ">";
+        std::string temp = ss.str();
+        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+    }
 
-        if (entity.DType == SXMLEntity::EType::StartElement) {
-            // Opening tag with attributes
-            output << "<" << EscapeString(entity.DNameData) << FormatAttributes(entity.DAttributes) << "></" 
-                   << EscapeString(entity.DNameData) << ">";
-        } 
-        else if (entity.DType == SXMLEntity::EType::EndElement) {
-            // Closing tag
-            output << "</" << EscapeString(entity.DNameData) << ">";
-        } 
-        else if (entity.DType == SXMLEntity::EType::CompleteElement) {
-            // Self-closing tag
-            output << "<" << EscapeString(entity.DNameData) << FormatAttributes(entity.DAttributes) << "/>";
-        } 
-        else if (entity.DType == SXMLEntity::EType::CharData) {
-            // Text content inside element
-            output << EscapeString(entity.DNameData);
+    void CompleteElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
+        std::stringstream ss;
+        ss << "<";
+        HandleSpecial(ss, name);
+        for (const auto& attr : attributes) {
+            ss << " ";
+            HandleSpecial(ss, attr.first);
+            ss << "=\"";
+            HandleSpecial(ss, attr.second);
+            ss << "\"";
         }
+        ss << "/>";
+        std::string temp = ss.str();
+        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+    }
 
-        WriteToDisk(output.str());
+    void CharData(const std::string& data) {
+        std::stringstream ss;
+        HandleSpecial(ss, data);
+        std::string temp = ss.str();
+        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
     }
 };
 
 CXMLWriter::CXMLWriter(std::shared_ptr<CDataSink> sink)
-    : DImplementation(std::make_unique<SImplementation>(sink)) {}
+: DImplementation(std::make_unique<SImplementation>(sink)) {
 
-CXMLWriter::~CXMLWriter() = default;
-
-bool CXMLWriter::Flush() {
-    return true;
 }
 
-bool CXMLWriter::WriteEntity(const SXMLEntity& entity) {
-    if (entity.DType >= SXMLEntity::EType::StartElement && entity.DType <= SXMLEntity::EType::CharData) {
-        DImplementation->HandleEntity(entity);
-        return true;
+CXMLWriter::~CXMLWriter() {
+
+}
+
+bool CXMLWriter::Flush() {
+    return true; //didnt use a buffer
+}
+
+bool CXMLWriter::WriteEntity(const SXMLEntity &entity) {
+    switch (entity.DType) {
+        case SXMLEntity::EType::StartElement:
+            DImplementation->StartElement(entity.DNameData, entity.DAttributes);
+            break;
+        case SXMLEntity::EType::EndElement:
+            DImplementation->EndElement(entity.DNameData);
+            break;
+        case SXMLEntity::EType::CompleteElement:
+            DImplementation->CompleteElement(entity.DNameData, entity.DAttributes);
+            break;
+        case SXMLEntity::EType::CharData:
+            DImplementation->CharData(entity.DNameData);
+            break;
+        default:
+            return false; 
     }
-    return false;
+    return true;
 }
