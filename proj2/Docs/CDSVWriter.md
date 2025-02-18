@@ -1,15 +1,78 @@
-CDSVWriter(std::shared_ptr<CDataSink> sink, char delimiter, bool quoteall): Constructs a CDSVWriter instance with the specified parameters for the data sink, delimiter, and quoting behavior.
+# DSVWriter Documentation
 
-~CDSVWriter(): Destructor that cleans up the resources associated with the CDSVWriter instance.
+## Overview
 
-bool WriteRow(const std::vectorstd::string& dataRow):
+The **DSVWriter** class is responsible for writing delimiter-separated values (DSV) data to a data sink. It supports configurable delimiters and quoting options to handle special characters within field values.
 
-Parameters:
-dataRow: A vector of strings representing a single row of data to be written to the CSV.
-Returns: A boolean indicating the success of the write operation.
-Description: This method processes the provided data row, applying the appropriate formatting rules:
-Each field is checked to determine if it requires quoting based on the presence of the delimiter, double quotes, or newline characters.
-Fields that require quoting are enclosed in double quotes. Any existing double quotes within the field are escaped by replacing them with two double quotes.
-The formatted fields are then concatenated into a single string, with the specified delimiter separating the fields.
-Finally, a newline character is appended to indicate the end of the row.
-The resulting formatted string is written to the specified data sink.
+## Class: `CDSVWriter`
+
+The `CDSVWriter` class provides an interface for writing structured data to a sink in a delimiter-separated format.
+
+### Constructor
+
+```cpp
+CDSVWriter(std::shared_ptr<CDataSink> sink, char delimiter, bool quoteall);
+```
+
+- **Parameters:**
+  - `sink`:  A shared pointer to a `CDataSink` object where the DSV data will be written.
+  - `delimiter`: The character used to separate fields in a row.
+  - `quoteall`: A boolean indicating whether all fields should be enclosed in quotes.
+
+- **Description:**
+  - Initializes a `CDSVWriter` instance with the specified sink, delimiter, and quoting preference.
+
+#### Destructor
+
+```cpp
+~CXMLWriter();
+```
+
+- **Description:**
+  - Cleans up resources used by `CDSVWriter`.
+
+#### Methods
+
+##### `bool WriteRow(const std::vector<std::string>& dataRow);`
+
+- **Parameters:**
+  - `dataRow`: A vector of strings representing the fields in a row.
+
+- **Returns:**
+  - `true` if the row was successfully written, otherwise `false`.
+
+- **Description:**
+  - Writes a row of data to the sink, applying quoting rules if necessary.
+
+
+### SImplementation Struct
+
+The `SImplementation` struct manages the internal logic of the DSV writing process.
+
+#### Constructor
+
+```cpp
+SImplementation(std::shared_ptr<CDataSink> sink, char delimiter, bool quoteall);
+```
+
+- **Parameters:**
+  - `sink`: A shared pointer to a data sink for writing output.
+  - `delimiter`: The character used to separate fields.
+  - `quoteall`: A boolean indicating whether all fields should be enclosed in quotes.
+
+- **Description:**
+  - Initializes an `SImplementation` object with the given sink, delimiter, and quoting preference.
+
+```cpp
+SImplementation();;
+```
+- **Description:**
+  - Default constructor initializing with no sink, a comma as the delimiter, and `quoteall` set to `false`.
+
+
+#### Methods
+
+##### `bool WriteRow(const std::vector<std::string>& dataRow);`
+
+- **Description:**
+  - Processes a row of data, applying quoting rules if needed, and writes it to the data sink.
