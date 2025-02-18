@@ -25,45 +25,46 @@ struct CXMLWriter::SImplementation {
     }
 
     void StartElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
-        std::stringstream ss;
-        ss << "<";
-        HandleSpecial(ss, name);
-        for (const auto& attr : attributes) {
-            ss << " ";
-            HandleSpecial(ss, attr.first);
-            ss << "=\"";
-            HandleSpecial(ss, attr.second);
-            ss << "\"";
-        }
-        ss << ">";
-        std::string temp = ss.str();
-        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+    std::stringstream ss;
+    ss << "\n\t<"; 
+    HandleSpecial(ss, name);
+    for (const auto& attr : attributes) {
+        ss << " ";
+        HandleSpecial(ss, attr.first);
+        ss << "=\"";
+        HandleSpecial(ss, attr.second);
+        ss << "\"";
     }
+    ss << ">";
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
 
     void EndElement(const std::string& name) {
-        std::stringstream ss;
-        ss << "</";
-        HandleSpecial(ss, name);
-        ss << ">";
-        std::string temp = ss.str();
-        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
-    }
+    std::stringstream ss;
+    ss << "\n</";
+    HandleSpecial(ss, name);
+    ss << ">";
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
+
 
     void CompleteElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
-        std::stringstream ss;
-        ss << "<";
-        HandleSpecial(ss, name);
-        for (const auto& attr : attributes) {
-            ss << " ";
-            HandleSpecial(ss, attr.first);
-            ss << "=\"";
-            HandleSpecial(ss, attr.second);
-            ss << "\"";
-        }
-        ss << "/>";
-        std::string temp = ss.str();
-        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+    std::stringstream ss;
+    ss << "\n\t<";
+    HandleSpecial(ss, name);
+    for (const auto& attr : attributes) {
+        ss << " ";
+        HandleSpecial(ss, attr.first);
+        ss << "=\"";
+        HandleSpecial(ss, attr.second);
+        ss << "\"";
     }
+    ss << "/>";
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
 
     void CharData(const std::string& data) {
         std::stringstream ss;
