@@ -97,14 +97,32 @@ std::string Replace(const std::string &str, const std::string &old, const std::s
 
 std::vector< std::string > Split(const std::string &str, const std::string &splt) noexcept{
     std::vector<std::string> result;
-    size_t start = 0, end;
-
-    while ((end = str.find(splt, start)) != std::string::npos) {
-        result.push_back(str.substr(start, end - start));
-        start = end + splt.length();
+    if (str.empty()) return result;
+    if (splt.empty()) { // If string is empty split @ whitespace
+        std::string word;
+        for (char c : str) {
+            if (std::isspace(c)) {
+                if (!word.empty()) { // If theres a word, add to results and clear
+                    result.push_back(word);
+                    word.clear();
+                }
+            } else {
+                word += c; // Add non whitespace to word
+            }
+        }
+        if (!word.empty()) result.push_back(word); // Add last word
+        return result;
     }
-
-    result.push_back(str.substr(start)); // Add the last segment
+    size_t pos = 0; // Split @ delimiter
+    while (pos < str.length()) {
+        size_t next = str.find(splt, pos); // Find next delimeter
+        if (next == std::string::npos) {
+            result.push_back(str.substr(pos)); // Add remaining string
+            break;
+        }
+        result.push_back(str.substr(pos, next - pos)); // Add substring between pos and delimiter
+        pos = next + splt.length();
+    }
     return result;
 }
 
@@ -120,25 +138,19 @@ std::string Join(const std::string &str, const std::vector< std::string > &vect)
 }
 
 std::string ExpandTabs(const std::string &str, int tabsize) noexcept{
-     if(str.empty()){
-    return "";
-   }
-
-       if (tabsize <= 0) { 
-        return str; 
-    }
-
-   std::string result;
-    int column = 0; 
+    std::string result;
+    int col = 0; // Tracks  current position of column 
 
     for (char c : str) {
         if (c == '\t') {
-            int spaces = tabsize - (column % tabsize); 
-            result.append(spaces, ' ');
-            column += spaces;
+            if (tabsize > 0) {
+                int spaces = tabsize - (col % tabsize); // Calculate space needed
+                result.append(spaces, ' '); // Append required space
+                col += spaces; // Update pos
+            }
         } else {
             result += c;
-            column++;
+            col = (c == '\n') ? 0 : col + 1; // Reset column if newline 
         }
     }
     return result;
