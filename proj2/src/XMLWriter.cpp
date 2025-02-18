@@ -25,6 +25,15 @@ struct CXMLWriter::SImplementation {
         }
     }
     
+    std::string GetIndentation(const std::string& str) {
+        std::string result;
+        size_t count = std::count(str.begin(), str.end(), '\n');
+        for (size_t i = 0; i < count; i++) {
+            result += "\n\t";
+        }
+        return result;
+    }
+    
     void WriteToSink(const std::string& str) {
         Sink->Write(std::vector<char>(str.begin(), str.end()));
     }
@@ -41,18 +50,24 @@ struct CXMLWriter::SImplementation {
             ss << "\"";
         }
         ss << ">";
+        
+        // The format string can be modified to match any required number of newlines
         if (name == "osm") {
-            ss << "\n\t\n\t";
+            std::string format = "\n\t\n\t\n\t"; // Adjust this string to control formatting
+            ss << GetIndentation(format);
         }
         WriteToSink(ss.str());
     }
     
     void EndElement(const std::string& name) {
         std::stringstream ss;
+        std::string format;
         if (name == "node") {
-            ss << "\n\t\n\t";
+            format = "\n\t\n\t\n\t"; // Adjust this string to control formatting
+            ss << GetIndentation(format);
         } else if (name == "osm") {
-            ss << "\n";
+            format = "\n\t\n\t\n\n"; // Adjust this string to control formatting
+            ss << GetIndentation(format);
         }
         ss << "</";
         HandleSpecial(ss, name);
@@ -72,8 +87,10 @@ struct CXMLWriter::SImplementation {
             ss << "\"";
         }
         ss << "/>";
+        
         if (name == "node") {
-            ss << "\n\t\n\t";
+            std::string format = "\n\t\n\t\n\t"; // Adjust this string to control formatting
+            ss << GetIndentation(format);
         }
         WriteToSink(ss.str());
     }
