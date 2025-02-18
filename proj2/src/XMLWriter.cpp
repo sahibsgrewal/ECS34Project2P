@@ -8,109 +8,82 @@
 
 struct CXMLWriter::SImplementation {
     std::shared_ptr<CDataSink> Sink;
-    
     SImplementation(std::shared_ptr<CDataSink> sink) : Sink(sink) {
+
     }
-    
-    void HandleSpecial(std::ostream& os, const std::string& value) {
+    void HandleSpecial(std::ostream& os, const std::string& value) { 
         for (char ch : value) {
             switch (ch) {
-                case '&': os << "&amp;"; break;
-                case '<': os << "&lt;"; break;
-                case '>': os << "&gt;"; break;
+                case '&':  os << "&amp;"; break;
+                case '<':  os << "&lt;"; break;
+                case '>':  os << "&gt;"; break;
                 case '\"': os << "&quot;"; break;
                 case '\'': os << "&apos;"; break;
-                default: os << ch; break;
+                default:   os << ch; break;
             }
         }
     }
-    
-    std::string GetIndentation(const std::string& str) {
-        std::string result;
-        size_t count = std::count(str.begin(), str.end(), '\n');
-        for (size_t i = 0; i < count; i++) {
-            result += "\n\t";
-        }
-        return result;
-    }
-    
-    void WriteToSink(const std::string& str) {
-        Sink->Write(std::vector<char>(str.begin(), str.end()));
-    }
-    
+
     void StartElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
-        std::stringstream ss;
-        ss << "<";
-        HandleSpecial(ss, name);
-        for (const auto& attr : attributes) {
-            ss << " ";
-            HandleSpecial(ss, attr.first);
-            ss << "=\"";
-            HandleSpecial(ss, attr.second);
-            ss << "\"";
-        }
-        ss << ">";
-        
-        // The format string can be modified to match any required number of newlines
-        if (name == "osm") {
-            std::string format = "\n\t\n\t\n\t"; // Adjust this string to control formatting
-            ss << GetIndentation(format);
-        }
-        WriteToSink(ss.str());
+    std::stringstream ss;
+    ss << "<";  
+    HandleSpecial(ss, name);
+    for (const auto& attr : attributes) {
+        ss << " ";
+        HandleSpecial(ss, attr.first);
+        ss << "=\"";
+        HandleSpecial(ss, attr.second);
+        ss << "\"";
     }
-    
+    ss << ">";
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
+
     void EndElement(const std::string& name) {
-        std::stringstream ss;
-        std::string format;
-        if (name == "node") {
-            format = "\n\t\n\t\n\t"; // Adjust this string to control formatting
-            ss << GetIndentation(format);
-        } else if (name == "osm") {
-            format = "\n\t\n\t\n\n"; // Adjust this string to control formatting
-            ss << GetIndentation(format);
-        }
-        ss << "</";
-        HandleSpecial(ss, name);
-        ss << ">";
-        WriteToSink(ss.str());
-    }
-    
+    std::stringstream ss;
+    ss << "</";
+    HandleSpecial(ss, name);
+    ss << ">";
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
+
     void CompleteElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
-        std::stringstream ss;
-        ss << "<";
-        HandleSpecial(ss, name);
-        for (const auto& attr : attributes) {
-            ss << " ";
-            HandleSpecial(ss, attr.first);
-            ss << "=\"";
-            HandleSpecial(ss, attr.second);
-            ss << "\"";
-        }
-        ss << "/>";
-        
-        if (name == "node") {
-            std::string format = "\n\t\n\t\n\t"; // Adjust this string to control formatting
-            ss << GetIndentation(format);
-        }
-        WriteToSink(ss.str());
+    std::stringstream ss;
+    ss << "<";
+    HandleSpecial(ss, name);
+    for (const auto& attr : attributes) {
+        ss << " ";
+        HandleSpecial(ss, attr.first);
+        ss << "=\"";
+        HandleSpecial(ss, attr.second);
+        ss << "\"";
     }
-    
+    ss << "/>";
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
+
     void CharData(const std::string& data) {
-        std::stringstream ss;
-        HandleSpecial(ss, data);
-        WriteToSink(ss.str());
-    }
+    std::stringstream ss;
+    HandleSpecial(ss, data);
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
 };
 
 CXMLWriter::CXMLWriter(std::shared_ptr<CDataSink> sink)
-    : DImplementation(std::make_unique<SImplementation>(sink)) {
+: DImplementation(std::make_unique<SImplementation>(sink)) {
+
 }
 
 CXMLWriter::~CXMLWriter() {
+
 }
 
 bool CXMLWriter::Flush() {
-    return true;
+    return true; //didnt use a buffer
 }
 
 bool CXMLWriter::WriteEntity(const SXMLEntity &entity) {
@@ -128,7 +101,7 @@ bool CXMLWriter::WriteEntity(const SXMLEntity &entity) {
             DImplementation->CharData(entity.DNameData);
             break;
         default:
-            return false;
+            return false; 
     }
     return true;
 }
