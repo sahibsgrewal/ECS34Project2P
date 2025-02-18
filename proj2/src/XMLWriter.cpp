@@ -42,7 +42,7 @@ struct CXMLWriter::SImplementation {
         }
         ss << ">";
         if (name == "osm") {
-            ss << "\n\t";
+            ss << "\n\t\n\t";
         }
         WriteToSink(ss.str());
     }
@@ -50,7 +50,9 @@ struct CXMLWriter::SImplementation {
     void EndElement(const std::string& name) {
         std::stringstream ss;
         if (name == "node") {
-            ss << "\n\t";
+            ss << "\n\t\n\t";
+        } else if (name == "osm") {
+            ss << "\n";
         }
         ss << "</";
         HandleSpecial(ss, name);
@@ -71,7 +73,7 @@ struct CXMLWriter::SImplementation {
         }
         ss << "/>";
         if (name == "node") {
-            ss << "\n\t";
+            ss << "\n\t\n\t";
         }
         WriteToSink(ss.str());
     }
