@@ -26,7 +26,7 @@ struct CXMLWriter::SImplementation {
 
     void StartElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
     std::stringstream ss;
-    ss << "\n\t<"; 
+    ss << "<";  
     HandleSpecial(ss, name);
     for (const auto& attr : attributes) {
         ss << " ";
@@ -42,17 +42,16 @@ struct CXMLWriter::SImplementation {
 
     void EndElement(const std::string& name) {
     std::stringstream ss;
-    ss << "\n</";
+    ss << "</";
     HandleSpecial(ss, name);
     ss << ">";
     std::string temp = ss.str();
     Sink->Write(std::vector<char>(temp.begin(), temp.end()));
 }
 
-
     void CompleteElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
     std::stringstream ss;
-    ss << "\n\t<";
+    ss << "<";
     HandleSpecial(ss, name);
     for (const auto& attr : attributes) {
         ss << " ";
@@ -67,11 +66,11 @@ struct CXMLWriter::SImplementation {
 }
 
     void CharData(const std::string& data) {
-        std::stringstream ss;
-        HandleSpecial(ss, data);
-        std::string temp = ss.str();
-        Sink->Write(std::vector<char>(temp.begin(), temp.end()));
-    }
+    std::stringstream ss;
+    HandleSpecial(ss, data);
+    std::string temp = ss.str();
+    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
+}
 };
 
 CXMLWriter::CXMLWriter(std::shared_ptr<CDataSink> sink)
