@@ -61,50 +61,119 @@ TEST(XMLReader, ReadWithAttributesTest) {
     EXPECT_EQ(entity.AttributeValue("age"), "34");
 }
 
-// Test writing basic XML entities
-TEST(XMLWriter, BasicWriteTest) {
-    // Create a StringDataSink
-    CStringDataSink sink;
+#include <gtest/gtest.h>
+#include "XMLWriter.h"
+#include "StringDataSink.h"
+#include <memory>
+#include <string>
 
-    // Create a XMLWriter with the StringDataSink
-    CXMLWriter writer(std::make_shared<CStringDataSink>(sink));
+TEST(XMLWriterTest, WriteStartElement) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
 
-    // Create sample entities
-    SXMLEntity entity1, entity2;
-    entity1.DType = SXMLEntity::EType::StartElement;
-    entity1.DNameData = "root";
-
-    entity2.DType = SXMLEntity::EType::StartElement;
-    entity2.DNameData = "element1";
-
-    // Write entities
-    writer.WriteEntity(entity1);
-    writer.WriteEntity(entity2);
-
-    // Check the content of the StringDataSink
-    std::string expectedXmlString = "<root></root><element1></element1>";
-    EXPECT_EQ(sink.String(), expectedXmlString);
+    SXMLEntity entity;
+    entity.DType = SXMLEntity::EType::StartElement;
+    entity.DNameData = "root";
+    
+    EXPECT_TRUE(Writer->WriteEntity(entity));
+    EXPECT_EQ(Sink->String(), "<root>");
 }
 
-// Test writing entities with attributes
-TEST(XMLWriter, WriteWithAttributesTest) {
-    // Create a StringDataSink
-    CStringDataSink sink;
+TEST(XMLWriterTest, WriteEndElement) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
 
-    // Create a XMLWriter with the StringDataSink
-    CXMLWriter writer(std::make_shared<CStringDataSink>(sink));
+    SXMLEntity entity;
+    entity.DType = SXMLEntity::EType::EndElement;
+    entity.DNameData = "root";
+    
+    EXPECT_TRUE(Writer->WriteEntity(entity));
+    EXPECT_EQ(Sink->String(), "</root>");
+}
 
-    // Create an entity with attributes
+TEST(XMLWriterTest, WriteCompleteElement) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
+
+    SXMLEntity entity;
+    entity.DType = SXMLEntity::EType::CompleteElement;
+    entity.DNameData = "empty";
+    
+    EXPECT_TRUE(Writer->WriteEntity(entity));
+    EXPECT_EQ(Sink->String(), "<empty/>");
+}
+
+TEST(XMLWriterTest, WriteCharData) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
+
+    SXMLEntity entity;
+    entity.DType = SXMLEntity::EType::CharData;
+    entity.DNameData = "Hello, World!";
+    
+    EXPECT_TRUE(Writer->WriteEntity(entity));
+    EXPECT_EQ(Sink->String(), "Hello, World!");
+}
+
+TEST(XMLWriterTest, WriteElementWithAttributes) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
+
     SXMLEntity entity;
     entity.DType = SXMLEntity::EType::StartElement;
     entity.DNameData = "person";
-    entity.SetAttribute("name", "Sahib");
-    entity.SetAttribute("age", "34");
+    entity.DAttributes.push_back({"name", "Sahib"});
+    entity.DAttributes.push_back({"age", "34"});
+    
+    EXPECT_TRUE(Writer->WriteEntity(entity));
+    EXPECT_EQ(Sink->String(), "<person name=\"Sahib\" age=\"34\">");
+}
 
-    // Write the entity
-    writer.WriteEntity(entity);
+TEST(XMLWriterTest, EscapeSpecialCharacters) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
 
-    // Check the content of the StringDataSink
-    std::string expectedXmlString = "<person name=\"Sahib\" age=\"34\"></person>";
-    EXPECT_EQ(sink.String(), expectedXmlString);
+    SXMLEntity entity;
+    entity.DType = SXMLEntity::EType::CharData;
+    entity.DNameData = "A & B < C > D \" E ' F";
+    
+    EXPECT_TRUE(Writer->WriteEntity(entity));
+    EXPECT_EQ(Sink->String(), "A &amp; B &lt; C &gt; D &quot; E &apos; F");
+}
+
+TEST(XMLWriterTest, CompleteDocument) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
+
+    std::vector<SXMLEntity> entities = {
+        {SXMLEntity::EType::StartElement, "root", {}},
+        {SXMLEntity::EType::StartElement, "child", {{"id", "1"}}},
+        {SXMLEntity::EType::CharData, "content", {}},
+        {SXMLEntity::EType::EndElement, "child", {}},
+        {SXMLEntity::EType::EndElement, "root", {}}
+    };
+    
+    for (const auto& entity : entities) {
+        EXPECT_TRUE(Writer->WriteEntity(entity));
+    }
+    
+    EXPECT_EQ(Sink->String(), "<root><child id=\"1\">content</child></root>");
+}
+
+TEST(XMLWriterTest, InvalidEntityType) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
+
+    SXMLEntity entity;
+    entity.DType = static_cast<SXMLEntity::EType>(999); // Invalid type
+    entity.DNameData = "test";
+    
+    EXPECT_FALSE(Writer->WriteEntity(entity));
+}
+
+TEST(XMLWriterTest, FlushOperation) {
+    auto Sink = std::make_shared<CStringDataSink>();
+    auto Writer = std::make_unique<CXMLWriter>(Sink);
+    
+    EXPECT_TRUE(Writer->Flush());
 }
