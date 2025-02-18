@@ -4,107 +4,122 @@
 #include "StringDataSource.h"
 #include "StringDataSink.h"
 
-TEST(DSVReader, BasicReadTest) {
-    // Prepare a sample string
-    std::string dsvString = "Sahib,Grewal,34\nOmar,Taha,43\n";
+TEST(DSVWriter, EmptyRow) {
+    auto sink = std::make_shared<CStringDataSink>();
+    CDSVWriter writer(sink, ',');
+    std::vector<std::string> row;
+    
+    EXPECT_TRUE(writer.WriteRow(row));
+    EXPECT_EQ(sink->String(), "\n");
+}
 
-    // Create a StringDataSource with the sample string
-    CStringDataSource source(dsvString);
+TEST(DSVWriter, SimpleRow) {
+    auto sink = std::make_shared<CStringDataSink>();
+    CDSVWriter writer(sink, ',');
+    std::vector<std::string> row = {"a", "b", "c"};
+    
+    EXPECT_TRUE(writer.WriteRow(row));
+    EXPECT_EQ(sink->String(), "a,b,c\n");
+}
 
-    // Create a DSVReader
-    CDSVReader reader(std::make_shared<CStringDataSource>(source), ',');
+TEST(DSVWriter, RowWithDelimiter) {
+    auto sink = std::make_shared<CStringDataSink>();
+    CDSVWriter writer(sink, ',');
+    std::vector<std::string> row = {"a,b", "c"};
+    
+    EXPECT_TRUE(writer.WriteRow(row));
+    EXPECT_EQ(sink->String(), "\"a,b\",c\n");
+}
 
-    // Test rows
-    std::vector<std::string> row1, row2;
+TEST(DSVWriter, RowWithQuote) {
+    auto sink = std::make_shared<CStringDataSink>();
+    CDSVWriter writer(sink, ',');
+    std::vector<std::string> row = {"a\"b", "c"};
+    
+    EXPECT_TRUE(writer.WriteRow(row));
+    EXPECT_EQ(sink->String(), "\"a\"\"b\",c\n");
+}
 
-    EXPECT_FALSE(reader.End());
-    EXPECT_TRUE(reader.ReadRow(row1));
-    EXPECT_FALSE(reader.End());
-    EXPECT_TRUE(reader.ReadRow(row2));
+TEST(DSVWriter, RowWithNewline) {
+    auto sink = std::make_shared<CStringDataSink>();
+    CDSVWriter writer(sink, ',');
+    std::vector<std::string> row = {"a\nb", "c"};
+    
+    EXPECT_TRUE(writer.WriteRow(row));
+    EXPECT_EQ(sink->String(), "\"a\nb\",c\n");
+}
+
+TEST(DSVWriter, QuoteAllMode) {
+    auto sink = std::make_shared<CStringDataSink>();
+    CDSVWriter writer(sink, ',', true);
+    std::vector<std::string> row = {"a", "b", "c"};
+    
+    EXPECT_TRUE(writer.WriteRow(row));
+    EXPECT_EQ(sink->String(), "\"a\",\"b\",\"c\"\n");
+}
+TEST(DSVReader, EmptySource) {
+    auto source = std::make_shared<CStringDataSource>("");
+    CDSVReader reader(source, ',');
+    std::vector<std::string> row;
+    
     EXPECT_TRUE(reader.End());
-
-    // Check the content
-    ASSERT_EQ(row1.size(), 3);
-    EXPECT_EQ(row1[0], "Sahib");
-    EXPECT_EQ(row1[1], "Grewal");
-    EXPECT_EQ(row1[2], "34");
-
-    ASSERT_EQ(row2.size(), 3);
-    EXPECT_EQ(row2[0], "Omar");
-    EXPECT_EQ(row2[1], "Taha");
-    EXPECT_EQ(row2[2], "43");
+    EXPECT_FALSE(reader.ReadRow(row));
 }
-
-TEST(DSVReader, ReadEmptyFieldsTest) {
-    // Prepare a sample string with empty fields
-    std::string dsvString = "Sahib,,34\n,Grewal,\n";
-
-    // Create a StringDataSource with the sample string
-    CStringDataSource source(dsvString);
-
-    // Create a DSVReader
-    CDSVReader reader(std::make_shared<CStringDataSource>(source), ',');
-
-    // Test rows with empty fields
-    std::vector<std::string> row1, row2;
-
+TEST(DSVReader, SimpleRow) {
+    auto source = std::make_shared<CStringDataSource>("a,b,c\n");
+    CDSVReader reader(source, ',');
+    std::vector<std::string> row;
+    
     EXPECT_FALSE(reader.End());
-    EXPECT_TRUE(reader.ReadRow(row1));
-    EXPECT_FALSE(reader.End());
-    EXPECT_TRUE(reader.ReadRow(row2));
+    EXPECT_TRUE(reader.ReadRow(row));
+    EXPECT_EQ(row.size(), 3);
+    EXPECT_EQ(row[0], "a");
+    EXPECT_EQ(row[1], "b");
+    EXPECT_EQ(row[2], "c");
     EXPECT_TRUE(reader.End());
-
-    // Check the content of the rows with empty fields
-    ASSERT_EQ(row1.size(), 3);
-    EXPECT_EQ(row1[0], "Sahib");
-    EXPECT_EQ(row1[1], "");
-    EXPECT_EQ(row1[2], "34");
-
-    ASSERT_EQ(row2.size(), 3);
-    EXPECT_EQ(row2[0], "");
-    EXPECT_EQ(row2[1], "Grewal");
-    EXPECT_EQ(row2[2], "");
-}
-// Test reading and writing with no quotes
-TEST(DSVWriter, WriteWithoutQuotesTest) {
-    // Create a DSVWriter with StringDataSink and no quotes
-    CStringDataSink sink;
-
-    CDSVWriter writer(std::make_shared<CStringDataSink>(sink), ',', false);
-
-    // Write rows without quotes
-    writer.WriteRow({"Sahib", "Grewal", "34"});
-    writer.WriteRow({"Omar", "Taha", "43"});
-
-    // Check the content of the StringDataSink
-    EXPECT_EQ(sink.String(), "Sahib,Grewal,34\nOmar,Taha,43");
 }
 
-// Test reading and writing with different line endings
-TEST(DSVWriter, WriteWithDifferentLineEndingsTest) {
-    // Create a DSVWriter with a StringDataSink and different line endings
-    CStringDataSink sink;
-
-    CDSVWriter writer(std::make_shared<CStringDataSink>(sink), ',', true);
-
-    // Write rows with different line endings
-    writer.WriteRow({"Sahib", "Grewal", "34"});
-    writer.WriteRow({"Omar", "Taha", "43"});
-
-    // Check the content of the StringDataSink
-    EXPECT_EQ(sink.String(), "\"Sahib\",\"Grewal\",\"34\"\r\n\"Omar\",\"Taha\",\"43\"\n");
+TEST(DSVReader, QuotedValue) {
+    auto source = std::make_shared<CStringDataSource>("\"a,b\",c\n");
+    CDSVReader reader(source, ',');
+    std::vector<std::string> row;
+    
+    EXPECT_FALSE(reader.End());
+    EXPECT_TRUE(reader.ReadRow(row));
+    EXPECT_EQ(row.size(), 2);
+    EXPECT_EQ(row[0], "a,b");
+    EXPECT_EQ(row[1], "c");
+    EXPECT_TRUE(reader.End());
 }
-// Test reading and writing with escaped characters
-TEST(DSVWriter, WriteWithEscapedCharactersTest) {
-    // Create a DSVWriter with a StringDataSink and escape characters
-    CStringDataSink sink;
+TEST(DSVReader, EscapedQuotes) {
+    auto source = std::make_shared<CStringDataSource>("\"a\"\"b\",c\n");
+    CDSVReader reader(source, ',');
+    std::vector<std::string> row;
+    
+    EXPECT_FALSE(reader.End());
+    EXPECT_TRUE(reader.ReadRow(row));
+    EXPECT_EQ(row.size(), 2);
+    EXPECT_EQ(row[0], "a\"b");
+    EXPECT_EQ(row[1], "c");
+    EXPECT_TRUE(reader.End());
+}
 
-    CDSVWriter writer(std::make_shared<CStringDataSink>(sink), ',', true);
-
-    // Write rows with escaped characters
-    writer.WriteRow({"Sahib", "Grewal, Student", "34"});
-    writer.WriteRow({"Omar", "Taha \"TA\"", "43"});
-
-    // Check the content of the StringDataSink
-    EXPECT_EQ(sink.String(), "\"Sahib\",\"Grewal, Student\",\"34\"\n\"Omar\",\"Taha \"\"TA\"\"\",\"43\"");
+TEST(DSVReader, MultipleRows) {
+    auto source = std::make_shared<CStringDataSource>("a,b\nc,d\n");
+    CDSVReader reader(source, ',');
+    std::vector<std::string> row;
+    
+    EXPECT_FALSE(reader.End());
+    EXPECT_TRUE(reader.ReadRow(row));
+    EXPECT_EQ(row.size(), 2);
+    EXPECT_EQ(row[0], "a");
+    EXPECT_EQ(row[1], "b");
+    
+    EXPECT_FALSE(reader.End());
+    EXPECT_TRUE(reader.ReadRow(row));
+    EXPECT_EQ(row.size(), 2);
+    EXPECT_EQ(row[0], "c");
+    EXPECT_EQ(row[1], "d");
+    
+    EXPECT_TRUE(reader.End());
 }

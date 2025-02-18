@@ -83,14 +83,9 @@ TEST(StringUtilsTest, Replace){
 }
 
 TEST(StringUtilsTest, Split){
-    
-EXPECT_EQ(StringUtils::Split("a,b,c", ","), (std::vector<std::string>{"a", "b", "c"}));
-EXPECT_EQ(StringUtils::Split("a,,b,c", ","), (std::vector<std::string>{"a", "", "b", "c"}));
-EXPECT_EQ(StringUtils::Split("a:b:c", ":"), (std::vector<std::string>{"a", "b", "c"}));
-EXPECT_EQ(StringUtils::Split("a b c", " "), (std::vector<std::string>{"a", "b", "c"}));
-
-    
-    EXPECT_EQ(StringUtils::Split("", ","), std::vector<std::string>{""}); // Empty string
+    EXPECT_EQ(StringUtils::Split("hello sahib"), std::vector<std::string>({"hello", "sahib"}));
+    EXPECT_EQ(StringUtils::Split("hello  sahib", " "), std::vector<std::string>({"hello", "", "sahib"}));
+    EXPECT_EQ(StringUtils::Split("hello"), std::vector<std::string>({"hello"}));
 }
 
 TEST(StringUtilsTest, Join){

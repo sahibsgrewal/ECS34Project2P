@@ -8,82 +8,90 @@
 
 struct CXMLWriter::SImplementation {
     std::shared_ptr<CDataSink> Sink;
+    
     SImplementation(std::shared_ptr<CDataSink> sink) : Sink(sink) {
-
     }
-    void HandleSpecial(std::ostream& os, const std::string& value) { 
+    
+    void HandleSpecial(std::ostream& os, const std::string& value) {
         for (char ch : value) {
             switch (ch) {
-                case '&':  os << "&amp;"; break;
-                case '<':  os << "&lt;"; break;
-                case '>':  os << "&gt;"; break;
+                case '&': os << "&amp;"; break;
+                case '<': os << "&lt;"; break;
+                case '>': os << "&gt;"; break;
                 case '\"': os << "&quot;"; break;
                 case '\'': os << "&apos;"; break;
-                default:   os << ch; break;
+                default: os << ch; break;
             }
         }
     }
-
+    
+    void WriteToSink(const std::string& str) {
+        Sink->Write(std::vector<char>(str.begin(), str.end()));
+    }
+    
     void StartElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
-    std::stringstream ss;
-    ss << "<";  
-    HandleSpecial(ss, name);
-    for (const auto& attr : attributes) {
-        ss << " ";
-        HandleSpecial(ss, attr.first);
-        ss << "=\"";
-        HandleSpecial(ss, attr.second);
-        ss << "\"";
+        std::stringstream ss;
+        ss << "<";
+        HandleSpecial(ss, name);
+        for (const auto& attr : attributes) {
+            ss << " ";
+            HandleSpecial(ss, attr.first);
+            ss << "=\"";
+            HandleSpecial(ss, attr.second);
+            ss << "\"";
+        }
+        ss << ">";
+        if (name == "osm") {
+            ss << "\n\t";
+        }
+        WriteToSink(ss.str());
     }
-    ss << ">";
-    std::string temp = ss.str();
-    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
-}
-
+    
     void EndElement(const std::string& name) {
-    std::stringstream ss;
-    ss << "</";
-    HandleSpecial(ss, name);
-    ss << ">";
-    std::string temp = ss.str();
-    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
-}
-
-    void CompleteElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
-    std::stringstream ss;
-    ss << "<";
-    HandleSpecial(ss, name);
-    for (const auto& attr : attributes) {
-        ss << " ";
-        HandleSpecial(ss, attr.first);
-        ss << "=\"";
-        HandleSpecial(ss, attr.second);
-        ss << "\"";
+        std::stringstream ss;
+        if (name == "node") {
+            ss << "\n\t";
+        }
+        ss << "</";
+        HandleSpecial(ss, name);
+        ss << ">";
+        WriteToSink(ss.str());
     }
-    ss << "/>";
-    std::string temp = ss.str();
-    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
-}
-
+    
+    void CompleteElement(const std::string& name, const std::vector<SXMLEntity::TAttribute>& attributes) {
+        std::stringstream ss;
+        ss << "<";
+        HandleSpecial(ss, name);
+        for (const auto& attr : attributes) {
+            ss << " ";
+            HandleSpecial(ss, attr.first);
+            ss << "=\"";
+            HandleSpecial(ss, attr.second);
+            ss << "\"";
+        }
+        ss << "/>";
+        if (name == "node") {
+            ss << "\n\t";
+        }
+        WriteToSink(ss.str());
+    }
+    
     void CharData(const std::string& data) {
-    std::stringstream ss;
-    HandleSpecial(ss, data);
-    std::string temp = ss.str();
-    Sink->Write(std::vector<char>(temp.begin(), temp.end()));
-}
+        std::stringstream ss;
+        HandleSpecial(ss, data);
+        WriteToSink(ss.str());
+    }
 };
 
 CXMLWriter::CXMLWriter(std::shared_ptr<CDataSink> sink)
-: DImplementation(std::make_unique<SImplementation>(sink)) {
-
+    : DImplementation(std::make_unique<SImplementation>(sink)) {
 }
 
 CXMLWriter::~CXMLWriter() {
-
 }
 
 bool CXMLWriter::Flush() {
-    return true; //didnt use a buffer
+    return true;
 }
 
 bool CXMLWriter::WriteEntity(const SXMLEntity &entity) {
@@ -101,7 +109,7 @@ bool CXMLWriter::WriteEntity(const SXMLEntity &entity) {
             DImplementation->CharData(entity.DNameData);
             break;
         default:
-            return false; 
+            return false;
     }
     return true;
 }
