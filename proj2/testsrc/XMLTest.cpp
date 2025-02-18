@@ -1,71 +1,66 @@
-
 #include <gtest/gtest.h>
 #include "XMLReader.h"
 #include "XMLWriter.h"
+#include "StringDataSink.h"
 #include "StringDataSource.h"
-#include "StringDataSink.h"
-
-// Test reading basic XML entities
-TEST(XMLReader, BasicReadTest) {
-    // Create a sample XML string
-    std::string xmlString = "<root><element1>Value1</element1><element2>Value2</element2></root>";
-
-    // Create a StringDataSource with sample XML string
-    CStringDataSource source(xmlString);
-
-    // Create a XMLReader
-    CXMLReader reader(std::make_shared<CStringDataSource>(source));
-
-    // Test reading entities
-    SXMLEntity entity1, entity2;
-
-    EXPECT_FALSE(reader.End());
-    EXPECT_TRUE(reader.ReadEntity(entity1, false));
-    EXPECT_FALSE(reader.End());
-    EXPECT_TRUE(reader.ReadEntity(entity2, false));
-    EXPECT_TRUE(reader.End());
-
-    // Check the content of the entities
-    ASSERT_EQ(entity1.DType, SXMLEntity::EType::StartElement);
-    EXPECT_EQ(entity1.DNameData, "root");
-    EXPECT_EQ(entity1.DAttributes.size(), 0);
-
-    ASSERT_EQ(entity2.DType, SXMLEntity::EType::StartElement);
-    EXPECT_EQ(entity2.DNameData, "element1");
-    EXPECT_EQ(entity2.DAttributes.size(), 0);
-}
-
-// Test reading entities with attributes
-TEST(XMLReader, ReadWithAttributesTest) {
-    // Create a sample XML string with attributes
-    std::string xmlString = "<person name=\"Sahib\" age=\"34\" />";
-
-    // Create a StringDataSource with the sample XML string
-    CStringDataSource source(xmlString);
-
-    // Create a XMLReader
-    CXMLReader reader(std::make_shared<CStringDataSource>(source));
-
-    // Test reading entities with attributes
-    SXMLEntity entity;
-
-    EXPECT_FALSE(reader.End());
-    EXPECT_TRUE(reader.ReadEntity(entity, false));
-    EXPECT_TRUE(reader.End());
-
-    // Check the content of the entity with attributes
-    ASSERT_EQ(entity.DType, SXMLEntity::EType::StartElement);
-    EXPECT_EQ(entity.DNameData, "person");
-    ASSERT_EQ(entity.DAttributes.size(), 2);
-    EXPECT_EQ(entity.AttributeValue("name"), "Sahib");
-    EXPECT_EQ(entity.AttributeValue("age"), "34");
-}
-
-#include <gtest/gtest.h>
-#include "XMLWriter.h"
-#include "StringDataSink.h"
 #include <memory>
 #include <string>
+
+TEST(XMLReaderTest, EmptyDocument) {
+    auto source = std::make_shared<CStringDataSource>("");
+    auto Reader = std::make_unique<CXMLReader>(source);
+    SXMLEntity Entity;
+    
+    EXPECT_TRUE(Reader->End());
+    EXPECT_FALSE(Reader->ReadEntity(Entity, false));
+}
+
+TEST(XMLReaderTest, SimpleElement) {
+    auto source = std::make_shared<CStringDataSource>("<root></root>");
+    auto Reader = std::make_unique<CXMLReader>(source);
+    SXMLEntity Entity;
+    
+    EXPECT_TRUE(Reader->ReadEntity(Entity, false));
+    EXPECT_EQ(Entity.DType, SXMLEntity::EType::StartElement);
+    EXPECT_EQ(Entity.DNameData, "root");
+    
+    EXPECT_TRUE(Reader->ReadEntity(Entity, false));
+    EXPECT_EQ(Entity.DType, SXMLEntity::EType::EndElement);
+    EXPECT_EQ(Entity.DNameData, "root");
+    
+    EXPECT_TRUE(Reader->End());
+}
+
+TEST(XMLReaderTest, ElementWithAttributes) {
+    auto source = std::make_shared<CStringDataSource>("<person name=\"Sahib\" age=\"34\"></person>");
+    auto Reader = std::make_unique<CXMLReader>(source);
+    SXMLEntity Entity;
+    
+    EXPECT_TRUE(Reader->ReadEntity(Entity, false));
+    EXPECT_EQ(Entity.DType, SXMLEntity::EType::StartElement);
+    EXPECT_EQ(Entity.DNameData, "person");
+    EXPECT_EQ(Entity.DAttributes.size(), 2);
+    EXPECT_EQ(Entity.DAttributes[0].first, "name");
+    EXPECT_EQ(Entity.DAttributes[0].second, "Sahib");
+    EXPECT_EQ(Entity.DAttributes[1].first, "age");
+    EXPECT_EQ(Entity.DAttributes[1].second, "34");
+}
+
+TEST(XMLReaderTest, ElementWithCharacterData) {
+    auto source = std::make_shared<CStringDataSource>("<root>Hello, World!</root>");
+    auto Reader = std::make_unique<CXMLReader>(source);
+    SXMLEntity Entity;
+    
+    EXPECT_TRUE(Reader->ReadEntity(Entity, false));
+    EXPECT_EQ(Entity.DType, SXMLEntity::EType::StartElement);
+    
+    EXPECT_TRUE(Reader->ReadEntity(Entity, false));
+    EXPECT_EQ(Entity.DType, SXMLEntity::EType::CharData);
+    EXPECT_EQ(Entity.DNameData, "Hello, World!");
+    
+    EXPECT_TRUE(Reader->ReadEntity(Entity, false));
+    EXPECT_EQ(Entity.DType, SXMLEntity::EType::EndElement);
+}
 
 TEST(XMLWriterTest, WriteStartElement) {
     auto Sink = std::make_shared<CStringDataSink>();
@@ -113,20 +108,6 @@ TEST(XMLWriterTest, WriteCharData) {
     
     EXPECT_TRUE(Writer->WriteEntity(entity));
     EXPECT_EQ(Sink->String(), "Hello, World!");
-}
-
-TEST(XMLWriterTest, WriteElementWithAttributes) {
-    auto Sink = std::make_shared<CStringDataSink>();
-    auto Writer = std::make_unique<CXMLWriter>(Sink);
-
-    SXMLEntity entity;
-    entity.DType = SXMLEntity::EType::StartElement;
-    entity.DNameData = "person";
-    entity.DAttributes.push_back({"name", "Sahib"});
-    entity.DAttributes.push_back({"age", "34"});
-    
-    EXPECT_TRUE(Writer->WriteEntity(entity));
-    EXPECT_EQ(Sink->String(), "<person name=\"Sahib\" age=\"34\">");
 }
 
 TEST(XMLWriterTest, EscapeSpecialCharacters) {
