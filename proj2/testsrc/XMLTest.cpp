@@ -42,8 +42,8 @@ TEST(XMLReaderTest, ElementWithAttributes) {
     EXPECT_EQ(Entity.DAttributes.size(), 2);
     EXPECT_EQ(Entity.DAttributes[0].first, "name");
     EXPECT_EQ(Entity.DAttributes[0].second, "Sahib");
-    EXPECT_EQ(Entity.DAttributes[1].first, "34");
-    EXPECT_EQ(Entity.DAttributes[1].second, "30");
+    EXPECT_EQ(Entity.DAttributes[1].first, "age");
+    EXPECT_EQ(Entity.DAttributes[1].second, "34");
 }
 
 TEST(XMLReaderTest, ElementWithCharacterData) {
