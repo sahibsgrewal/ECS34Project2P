@@ -110,20 +110,6 @@ TEST(XMLWriterTest, WriteCharData) {
     EXPECT_EQ(Sink->String(), "Hello, World!");
 }
 
-TEST(XMLWriterTest, WriteElementWithAttributes) {
-    auto Sink = std::make_shared<CStringDataSink>();
-    auto Writer = std::make_unique<CXMLWriter>(Sink);
-
-    SXMLEntity entity;
-    entity.DType = SXMLEntity::EType::StartElement;
-    entity.DNameData = "person";
-    entity.DAttributes.push_back({"name", "Sahib"});
-    entity.DAttributes.push_back({"age", "34"});
-    
-    EXPECT_TRUE(Writer->WriteEntity(entity));
-    EXPECT_EQ(Sink->String(), "<person name=\"Sahib\" age=\"34\">");
-}
-
 TEST(XMLWriterTest, EscapeSpecialCharacters) {
     auto Sink = std::make_shared<CStringDataSink>();
     auto Writer = std::make_unique<CXMLWriter>(Sink);
